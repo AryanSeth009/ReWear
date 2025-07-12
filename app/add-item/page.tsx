@@ -1,92 +1,138 @@
 "use client"
 
-import type React from "react"
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Upload, X, Plus, CheckCircle, Recycle } from "lucide-react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Recycle, Upload, X } from "lucide-react"
-
-export default function AddItemPage() {
+const AddItem = () => {
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "",
-    type: "",
-    size: "",
-    condition: "",
-    tags: "",
-  })
-  const [images, setImages] = useState<string[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+    title: '',
+    description: '',
+    category: '',
+    type: '',
+    size: '',
+    condition: '',
+    tags: ''
+  });
 
-  const categories = {
-    Tops: ["T-Shirt", "Blouse", "Sweater", "Tank Top", "Hoodie"],
-    Bottoms: ["Jeans", "Pants", "Shorts", "Skirt", "Leggings"],
-    Dresses: ["Casual Dress", "Formal Dress", "Maxi Dress", "Mini Dress"],
-    Outerwear: ["Jacket", "Coat", "Blazer", "Cardigan", "Vest"],
-    Footwear: ["Sneakers", "Boots", "Heels", "Flats", "Sandals"],
-    Accessories: ["Bag", "Hat", "Scarf", "Belt", "Jewelry"],
-  }
+  const [images, setImages] = useState<string[]>([]);
+  const [currentTag, setCurrentTag] = useState('');
+  const [tagList, setTagList] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const router = useRouter();
 
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL", "6", "7", "8", "9", "10", "11", "12"]
-  const conditions = ["Like New", "Excellent", "Good", "Fair"]
+  const categories = [
+    'Tops', 'Bottoms', 'Dresses', 'Jackets', 'Shoes', 'Accessories', 'Activewear', 'Formal'
+  ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
-  }
+  const types = {
+    'Tops': ['T-Shirt', 'Blouse', 'Sweater', 'Tank Top', 'Cardigan'],
+    'Bottoms': ['Jeans', 'Pants', 'Shorts', 'Skirt', 'Leggings'],
+    'Dresses': ['Casual', 'Formal', 'Summer', 'Maxi', 'Mini'],
+    'Jackets': ['Denim', 'Leather', 'Blazer', 'Coat', 'Windbreaker'],
+    'Shoes': ['Sneakers', 'Boots', 'Heels', 'Flats', 'Sandals'],
+    'Accessories': ['Bag', 'Hat', 'Jewelry', 'Scarf', 'Belt'],
+    'Activewear': ['Sports Bra', 'Leggings', 'Workout Top', 'Shorts'],
+    'Formal': ['Suit', 'Dress Shirt', 'Formal Dress', 'Blazer']
+  };
+
+  const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '6', '7', '8', '9', '10', '11', '12'];
+  const conditions = ['Excellent', 'Good', 'Fair'];
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
+    const files = e.target.files;
     if (files) {
-      const newImages = Array.from(files).map((file) => URL.createObjectURL(file))
-      setImages((prev) => [...prev, ...newImages].slice(0, 5)) // Max 5 images
+      // In a real app, you'd upload these to a server
+      // For demo, we'll use placeholder URLs
+      const newImages = Array.from(files).map(() => 
+        `https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400&h=400&fit=crop&q=80`
+      );
+      setImages([...images, ...newImages.slice(0, 5 - images.length)]);
     }
-  }
+  };
 
   const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index))
-  }
+    setImages(images.filter((_, i) => i !== index));
+  };
+
+  const addTag = () => {
+    if (currentTag.trim() && !tagList.includes(currentTag.trim()) && tagList.length < 5) {
+      setTagList([...tagList, currentTag.trim().toLowerCase()]);
+      setCurrentTag('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTagList(tagList.filter(tag => tag !== tagToRemove));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsSubmitting(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsSubmitting(false);
+    setIsSubmitted(true);
+  };
 
-    // Simulate form submission
-    setTimeout(() => {
-      setIsLoading(false)
-      router.push("/dashboard")
-    }, 2000)
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <Recycle className="h-8 w-8 text-green-600 dark:text-green-400" />
+              <h1 className="text-2xl font-bold text-green-800 dark:text-green-400">ReWear</h1>
+            </Link>
+          </div>
+        </header>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-6">
+              <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Item Submitted Successfully!</h1>
+            <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
+              Your item is under review and will be live on the platform once approved by our team.
+            </p>
+            <div className="space-y-4">
+              <Button onClick={() => window.location.href = '/browse'} className="bg-green-600 hover:bg-green-700">
+                Browse More Items
+              </Button>
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                List Another Item
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Recycle className="h-8 w-8 text-green-600" />
-            <h1 className="text-2xl font-bold text-green-800">ReWear</h1>
+            <Recycle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <h1 className="text-2xl font-bold text-green-800 dark:text-green-400">ReWear</h1>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/browse" className="text-gray-600 hover:text-green-600">
+            <Link href="/browse" className="text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">
               Browse
             </Link>
-            <Link href="/add-item" className="text-green-600 font-medium">
+            <Link href="/add-item" className="text-green-600 dark:text-green-400 font-medium">
               Add Item
             </Link>
-            <Link href="/dashboard" className="text-gray-600 hover:text-green-600">
+            <Link href="/dashboard" className="text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">
               Dashboard
             </Link>
           </nav>
@@ -100,54 +146,52 @@ export default function AddItemPage() {
           </div>
         </div>
       </header>
-
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">List a New Item</h1>
-          <p className="text-gray-600">Share your pre-loved clothing with the ReWear community</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">List New Item</h1>
+          <p className="text-gray-600 dark:text-gray-300">Share your unused clothing with the community</p>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Image Upload */}
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Images Upload */}
           <Card>
             <CardHeader>
               <CardTitle>Photos</CardTitle>
-              <CardDescription>Add up to 5 photos of your item</CardDescription>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Upload up to 5 high-quality photos of your item</p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {images.map((image, index) => (
-                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                  <div key={index} className="relative aspect-square">
                     <img
-                      src={image || "/placeholder.svg"}
+                      src={image}
                       alt={`Upload ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-lg border"
                     />
-                    <Button
+                    <button
                       type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2 h-6 w-6 p-0"
                       onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                     >
-                      <X className="h-3 w-3" />
-                    </Button>
+                      <X className="w-3 h-3" />
+                    </button>
                   </div>
                 ))}
                 {images.length < 5 && (
-                  <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-green-500 transition-colors">
-                    <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-600">Add Photo</span>
-                    <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  <label className="aspect-square border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900 transition-colors">
+                    <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Add Photo</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
                   </label>
                 )}
               </div>
-              <p className="text-sm text-gray-500">
-                First photo will be used as the main image. JPG, PNG up to 10MB each.
-              </p>
             </CardContent>
           </Card>
-
           {/* Basic Information */}
           <Card>
             <CardHeader>
@@ -155,42 +199,39 @@ export default function AddItemPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="title">Title *</Label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  Title *
+                </label>
                 <Input
-                  id="title"
-                  name="title"
-                  placeholder="e.g., Vintage Denim Jacket"
+                  placeholder="e.g., Vintage Denim Jacket - Classic Blue"
                   value={formData.title}
-                  onChange={handleInputChange}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
                   required
                 />
               </div>
-
               <div>
-                <Label htmlFor="description">Description *</Label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  Description *
+                </label>
                 <Textarea
-                  id="description"
-                  name="description"
-                  placeholder="Describe your item's condition, style, fit, and any other relevant details..."
+                  placeholder="Describe your item's condition, style, and any relevant details..."
                   value={formData.description}
-                  onChange={handleInputChange}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
                   rows={4}
                   required
                 />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="category">Category *</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData({ ...formData, category: value, type: "" })}
-                  >
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Category *
+                  </label>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value, type: ''})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(categories).map((category) => (
+                      {categories.map(category => (
                         <SelectItem key={category} value={category}>
                           {category}
                         </SelectItem>
@@ -198,38 +239,39 @@ export default function AddItemPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
-                  <Label htmlFor="type">Type *</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(value) => setFormData({ ...formData, type: value })}
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Type *
+                  </label>
+                  <Select 
+                    value={formData.type} 
+                    onValueChange={(value) => setFormData({...formData, type: value})}
                     disabled={!formData.category}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {formData.category &&
-                        categories[formData.category as keyof typeof categories]?.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
+                      {formData.category && types[formData.category as keyof typeof types]?.map(type => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="size">Size *</Label>
-                  <Select value={formData.size} onValueChange={(value) => setFormData({ ...formData, size: value })}>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Size *
+                  </label>
+                  <Select value={formData.size} onValueChange={(value) => setFormData({...formData, size: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select size" />
                     </SelectTrigger>
                     <SelectContent>
-                      {sizes.map((size) => (
+                      {sizes.map(size => (
                         <SelectItem key={size} value={size}>
                           {size}
                         </SelectItem>
@@ -237,18 +279,16 @@ export default function AddItemPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
-                  <Label htmlFor="condition">Condition *</Label>
-                  <Select
-                    value={formData.condition}
-                    onValueChange={(value) => setFormData({ ...formData, condition: value })}
-                  >
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Condition *
+                  </label>
+                  <Select value={formData.condition} onValueChange={(value) => setFormData({...formData, condition: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select condition" />
                     </SelectTrigger>
                     <SelectContent>
-                      {conditions.map((condition) => (
+                      {conditions.map(condition => (
                         <SelectItem key={condition} value={condition}>
                           {condition}
                         </SelectItem>
@@ -257,63 +297,54 @@ export default function AddItemPage() {
                   </Select>
                 </div>
               </div>
-
-              <div>
-                <Label htmlFor="tags">Tags (optional)</Label>
-                <Input
-                  id="tags"
-                  name="tags"
-                  placeholder="e.g., vintage, casual, summer (separate with commas)"
-                  value={formData.tags}
-                  onChange={handleInputChange}
-                />
-                <p className="text-sm text-gray-500 mt-1">Add tags to help others find your item</p>
-              </div>
             </CardContent>
           </Card>
-
-          {/* Terms and Submit */}
+          {/* Tags */}
           <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="flex items-start space-x-2">
-                  <Checkbox id="terms" required />
-                  <Label htmlFor="terms" className="text-sm leading-relaxed">
-                    I confirm that this item belongs to me and is in the condition described. I agree to ReWear's{" "}
-                    <Link href="/terms" className="text-green-600 hover:underline">
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link href="/community-guidelines" className="text-green-600 hover:underline">
-                      Community Guidelines
-                    </Link>
-                    .
-                  </Label>
-                </div>
-
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-green-800 mb-2">What happens next?</h4>
-                  <ul className="text-sm text-green-700 space-y-1">
-                    <li>• Your item will be reviewed by our team (usually within 24 hours)</li>
-                    <li>• Once approved, it will be visible to the community</li>
-                    <li>• You'll earn points that can be used to redeem other items</li>
-                    <li>• Members can request swaps or redeem your item with points</li>
-                  </ul>
-                </div>
-
-                <div className="flex gap-4">
-                  <Button type="submit" className="flex-1" disabled={isLoading}>
-                    {isLoading ? "Submitting..." : "Submit for Review"}
-                  </Button>
-                  <Button type="button" variant="outline" asChild>
-                    <Link href="/dashboard">Cancel</Link>
-                  </Button>
-                </div>
+            <CardHeader>
+              <CardTitle>Tags</CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Add up to 5 tags to help others find your item</p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2 mb-4">
+                <Input
+                  placeholder="Add a tag..."
+                  value={currentTag}
+                  onChange={(e) => setCurrentTag(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                />
+                <Button type="button" onClick={addTag} disabled={tagList.length >= 5}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {tagList.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="cursor-pointer" onClick={() => removeTag(tag)}>
+                    #{tag}
+                    <X className="w-3 h-3 ml-1" />
+                  </Badge>
+                ))}
               </div>
             </CardContent>
           </Card>
+          {/* Submit */}
+          <div className="flex gap-4">
+            <Button
+              type="submit"
+              size="lg"
+              className="bg-green-600 hover:bg-green-700"
+              disabled={isSubmitting || !formData.title || !formData.description || !formData.category || !formData.size || !formData.condition}
+            >
+              {isSubmitting ? 'Submitting...' : 'List Item'}
+            </Button>
+            <Button type="button" size="lg" variant="outline">
+              Save as Draft
+            </Button>
+          </div>
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default AddItem;

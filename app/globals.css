@@ -12,6 +12,48 @@ body {
   }
 }
 
+/* Moving gradient animation */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient {
+  background: linear-gradient(
+    -45deg,
+    #10b981,
+    #059669,
+    #047857,
+    #065f46,
+    #064e3b
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+/* Number animation */
+@keyframes count-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-count {
+  animation: count-up 1s ease-out forwards;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -47,6 +89,11 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    /* ReWear specific colors */
+    --rewear-primary: 160 84% 39%;
+    --rewear-primary-foreground: 0 0% 98%;
+    --rewear-secondary: 160 84% 95%;
+    --rewear-accent: 160 84% 90%;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -81,6 +128,11 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    /* ReWear dark theme colors */
+    --rewear-primary: 160 84% 39%;
+    --rewear-primary-foreground: 0 0% 98%;
+    --rewear-secondary: 240 5.9% 10%;
+    --rewear-accent: 240 3.7% 15.9%;
   }
 }
 

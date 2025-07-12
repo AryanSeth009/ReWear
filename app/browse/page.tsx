@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Recycle, Search, Filter, Heart, Eye } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
+import { ThemeToggle } from "@/components/theme-provider"
 
 export default function BrowsePage() {
   const { user } = useAuth()
@@ -52,28 +53,29 @@ export default function BrowsePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white border-b">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Recycle className="h-8 w-8 text-green-600" />
-            <h1 className="text-2xl font-bold text-green-800">ReWear</h1>
+            <Recycle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <h1 className="text-2xl font-bold text-green-800 dark:text-green-400">ReWear</h1>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/browse" className="text-green-600 font-medium">
+            <Link href="/browse" className="text-green-600 dark:text-green-400 font-medium">
               Browse
             </Link>
-            <Link href="/add-item" className="text-gray-600 hover:text-green-600">
+            <Link href="/add-item" className="text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">
               Add Item
             </Link>
             {user && (
-              <Link href="/dashboard" className="text-gray-600 hover:text-green-600">
+              <Link href="/dashboard" className="text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">
                 Dashboard
               </Link>
             )}
           </nav>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {user ? (
               <Button asChild>
                 <Link href="/add-item">Add Item</Link>
@@ -96,34 +98,34 @@ export default function BrowsePage() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
           <div className="lg:w-64 space-y-6">
-            <div>
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+              <h3 className="font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
                 <Filter className="h-4 w-4" />
                 Filters
               </h3>
 
               {/* Search */}
               <div className="space-y-2 mb-6">
-                <Label>Search</Label>
+                <Label className="text-gray-700 dark:text-gray-300">Search</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     placeholder="Search items..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                 </div>
               </div>
 
               {/* Category Filter */}
               <div className="space-y-2 mb-6">
-                <Label>Category</Label>
+                <Label className="text-gray-700 dark:text-gray-300">Category</Label>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     <SelectItem value="all">All Categories</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category} value={category}>
@@ -136,7 +138,7 @@ export default function BrowsePage() {
 
               {/* Condition Filter */}
               <div className="space-y-2 mb-6">
-                <Label>Condition</Label>
+                <Label className="text-gray-700 dark:text-gray-300">Condition</Label>
                 <div className="space-y-2">
                   {conditions.map((condition) => (
                     <div key={condition} className="flex items-center space-x-2">
@@ -146,8 +148,9 @@ export default function BrowsePage() {
                         onCheckedChange={(checked) => {
                           setSelectedCondition(checked ? condition : "all")
                         }}
+                        className="border-gray-300 dark:border-gray-600"
                       />
-                      <Label htmlFor={condition} className="text-sm">
+                      <Label htmlFor={condition} className="text-sm text-gray-700 dark:text-gray-300">
                         {condition}
                       </Label>
                     </div>
@@ -157,12 +160,12 @@ export default function BrowsePage() {
 
               {/* Size Filter */}
               <div className="space-y-2">
-                <Label>Size</Label>
+                <Label className="text-gray-700 dark:text-gray-300">Size</Label>
                 <Select value={selectedSize} onValueChange={setSelectedSize}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
                     <SelectValue placeholder="All Sizes" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     <SelectItem value="all">All Sizes</SelectItem>
                     {sizes.map((size) => (
                       <SelectItem key={size} value={size}>
@@ -178,12 +181,12 @@ export default function BrowsePage() {
           {/* Main Content */}
           <div className="flex-1">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Browse Items ({items.length})</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Browse Items ({items.length})</h2>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-48 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   <SelectItem value="newest">Newest First</SelectItem>
                   <SelectItem value="oldest">Oldest First</SelectItem>
                   <SelectItem value="points-low">Points: Low to High</SelectItem>
@@ -196,12 +199,12 @@ export default function BrowsePage() {
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {[...Array(8)].map((_, i) => (
-                  <Card key={i} className="overflow-hidden animate-pulse">
-                    <div className="aspect-square bg-gray-200" />
+                  <Card key={i} className="overflow-hidden animate-pulse bg-white dark:bg-gray-800">
+                    <div className="aspect-square bg-gray-200 dark:bg-gray-700" />
                     <CardContent className="p-4">
-                      <div className="h-4 bg-gray-200 rounded mb-2" />
-                      <div className="h-3 bg-gray-200 rounded mb-2" />
-                      <div className="h-3 bg-gray-200 rounded" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded" />
                     </CardContent>
                   </Card>
                 ))}
@@ -209,48 +212,32 @@ export default function BrowsePage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {items.map((item) => (
-                  <Card key={item._id} className="overflow-hidden hover:shadow-lg transition-shadow group">
+                  <Card key={item._id} className="overflow-hidden hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     <div className="aspect-square relative">
                       <Image
                         src={item.images[0] || "/placeholder.svg?height=200&width=200"}
                         alt={item.title}
                         fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-200"
+                        className="object-cover"
                       />
                       <div className="absolute top-2 right-2 flex gap-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {item.condition}
-                        </Badge>
-                      </div>
-                      <div className="absolute bottom-2 left-2 flex items-center gap-2 text-white text-xs">
-                        <div className="flex items-center gap-1 bg-black/50 rounded px-2 py-1">
-                          <Heart className="h-3 w-3" />
-                          {item.likes}
-                        </div>
-                        <div className="flex items-center gap-1 bg-black/50 rounded px-2 py-1">
-                          <Eye className="h-3 w-3" />
-                          {item.views}
-                        </div>
+                        <Button size="icon" variant="secondary" className="h-8 w-8 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800">
+                          <Heart className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                     <CardContent className="p-4">
-                      <h3 className="font-semibold mb-2 line-clamp-1">{item.title}</h3>
+                      <h4 className="font-semibold mb-2 text-gray-900 dark:text-white">{item.title}</h4>
                       <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className="text-xs">
-                          {item.category}
-                        </Badge>
-                        <span className="text-sm text-gray-600">Size {item.size}</span>
+                        <Badge variant="secondary">{item.category}</Badge>
+                        <span className="text-sm text-gray-600 dark:text-gray-300">{item.condition}</span>
                       </div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="font-semibold text-green-600">{item.points} pts</span>
-                        <span className="text-sm text-gray-600">{item.user?.location || "Unknown"}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          by {item.user?.firstName} {item.user?.lastName?.[0]}.
+                        </span>
+                        <span className="font-semibold text-green-600 dark:text-green-400">{item.points} pts</span>
                       </div>
-                      <div className="text-sm text-gray-600 mb-3">
-                        by {item.user?.firstName} {item.user?.lastName}
-                      </div>
-                      <Button asChild className="w-full" size="sm">
-                        <Link href={`/items/${item._id}`}>View Details</Link>
-                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -259,17 +246,11 @@ export default function BrowsePage() {
 
             {!loading && items.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-gray-500 mb-4">No items found matching your criteria.</p>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSearchTerm("")
-                    setSelectedCategory("all")
-                    setSelectedCondition("all")
-                    setSelectedSize("all")
-                  }}
-                >
-                  Clear Filters
+                <Recycle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No items found</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">Try adjusting your filters or search terms.</p>
+                <Button asChild>
+                  <Link href="/add-item">Add Your First Item</Link>
                 </Button>
               </div>
             )}

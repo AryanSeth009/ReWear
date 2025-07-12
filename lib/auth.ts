@@ -85,3 +85,50 @@ export async function createUser(userData: {
     createdAt: new Date(),
   }
 }
+
+export async function signUp(email: string, password: string, firstName: string, lastName: string): Promise<User> {
+  const db = await getDatabase()
+  
+  // Check if user already exists
+  const existingUser = await db.collection("users").findOne({ email })
+  if (existingUser) {
+    throw new Error("User already exists")
+  }
+
+  return createUser({ email, password, firstName, lastName })
+}
+
+export async function signIn(email: string, password: string): Promise<{ user: User; token: string }> {
+  const db = await getDatabase()
+  
+  const user = await db.collection("users").findOne({ email })
+  if (!user) {
+    throw new Error("Invalid credentials")
+  }
+
+  const isValidPassword = await verifyPassword(password, user.password)
+  if (!isValidPassword) {
+    throw new Error("Invalid credentials")
+  }
+
+  const userData = {
+    _id: user._id.toString(),
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    points: user.points || 0,
+    rating: user.rating || 0,
+    isAdmin: user.isAdmin || false,
+    createdAt: user.createdAt,
+  }
+
+  const token = generateToken(user._id.toString())
+  
+  return { user: userData, token }
+}
+
+export async function signOut(): Promise<void> {
+  // In a real application, you might want to invalidate the token
+  // For now, we'll just return successfully
+  return Promise.resolve()
+}

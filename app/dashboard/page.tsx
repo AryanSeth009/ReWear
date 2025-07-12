@@ -11,8 +11,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Recycle, Plus, Star, Package, ArrowUpDown, Settings, LogOut, User, Heart, Clock } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { getItems } from "@/lib/items"
-import { getUserSwaps } from "@/lib/swaps"
+import { getSwapsByUser } from "@/lib/swaps"
 import { signOutAction } from "@/app/actions/auth"
+import { ThemeToggle } from "@/components/theme-provider"
 import type { Item } from "@/lib/items"
 import type { Swap } from "@/lib/swaps"
 
@@ -32,8 +33,9 @@ export default function DashboardPage() {
 
   const loadUserItems = async () => {
     try {
-      const items = await getItems({ userId: user!.id })
-      setUserItems(items)
+      // For now, we'll load all items since the getItems function doesn't support userId filter
+      const items = await getItems()
+      setUserItems(items.filter(item => item.userId === user!._id))
     } catch (error) {
       console.error("Error loading user items:", error)
     } finally {
@@ -43,7 +45,7 @@ export default function DashboardPage() {
 
   const loadUserSwaps = async () => {
     try {
-      const swaps = await getUserSwaps(user!.id)
+      const swaps = await getSwapsByUser(user!._id)
       setActiveSwaps(swaps.filter((swap) => swap.status !== "completed"))
     } catch (error) {
       console.error("Error loading user swaps:", error)
@@ -54,10 +56,10 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors duration-300">
         <div className="text-center">
-          <Recycle className="h-12 w-12 text-green-600 mx-auto mb-4 animate-spin" />
-          <p className="text-gray-600">Loading...</p>
+          <Recycle className="h-12 w-12 text-green-600 dark:text-green-400 mx-auto mb-4 animate-spin" />
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
         </div>
       </div>
     )
@@ -65,9 +67,9 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors duration-300">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please sign in</h1>
+          <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Please sign in</h1>
           <Button asChild>
             <Link href="/login">Sign In</Link>
           </Button>
@@ -77,26 +79,27 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white border-b">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Recycle className="h-8 w-8 text-green-600" />
-            <h1 className="text-2xl font-bold text-green-800">ReWear</h1>
+            <Recycle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <h1 className="text-2xl font-bold text-green-800 dark:text-green-400">ReWear</h1>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/browse" className="text-gray-600 hover:text-green-600">
+            <Link href="/browse" className="text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">
               Browse
             </Link>
-            <Link href="/add-item" className="text-gray-600 hover:text-green-600">
+            <Link href="/add-item" className="text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">
               Add Item
             </Link>
-            <Link href="/dashboard" className="text-green-600 font-medium">
+            <Link href="/dashboard" className="text-green-600 dark:text-green-400 font-medium">
               Dashboard
             </Link>
           </nav>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="sm">
               <Settings className="h-4 w-4" />
             </Button>
@@ -113,40 +116,40 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Profile Sidebar */}
           <div className="lg:col-span-1">
-            <Card>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 transition-colors duration-300">
               <CardHeader className="text-center">
                 <Avatar className="w-20 h-20 mx-auto mb-4">
-                  <AvatarImage src={user.avatar_url || "/placeholder-user.jpg"} />
-                  <AvatarFallback>
-                    {user.first_name[0]}
-                    {user.last_name[0]}
+                  <AvatarImage src="/placeholder-user.jpg" />
+                  <AvatarFallback className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                    {user.firstName[0]}
+                    {user.lastName[0]}
                   </AvatarFallback>
                 </Avatar>
-                <CardTitle>
-                  {user.first_name} {user.last_name}
+                <CardTitle className="text-gray-900 dark:text-white">
+                  {user.firstName} {user.lastName}
                 </CardTitle>
-                <CardDescription>{user.email}</CardDescription>
+                <CardDescription className="text-gray-600 dark:text-gray-300">{user.email}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Points Balance</span>
-                  <span className="font-semibold text-green-600">{user.points} pts</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Points Balance</span>
+                  <span className="font-semibold text-green-600 dark:text-green-400">{user.points} pts</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Total Swaps</span>
-                  <span className="font-semibold">{user.total_swaps}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Total Swaps</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{activeSwaps.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Rating</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Rating</span>
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-semibold">{user.rating}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{user.rating}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Member Since</span>
-                  <span className="font-semibold">
-                    {new Date(user.created_at).toLocaleDateString("en-US", {
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Member Since</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {new Date(user.createdAt).toLocaleDateString("en-US", {
                       month: "long",
                       year: "numeric",
                     })}
@@ -165,16 +168,16 @@ export default function DashboardPage() {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <Tabs defaultValue="items" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="items" className="flex items-center gap-2">
+              <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-700">
+                <TabsTrigger value="items" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
                   <Package className="h-4 w-4" />
                   My Items
                 </TabsTrigger>
-                <TabsTrigger value="swaps" className="flex items-center gap-2">
+                <TabsTrigger value="swaps" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
                   <ArrowUpDown className="h-4 w-4" />
                   Active Swaps
                 </TabsTrigger>
-                <TabsTrigger value="profile" className="flex items-center gap-2">
+                <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
                   <User className="h-4 w-4" />
                   Profile
                 </TabsTrigger>
@@ -182,7 +185,7 @@ export default function DashboardPage() {
 
               <TabsContent value="items" className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">My Items</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">My Items</h2>
                   <Button asChild>
                     <Link href="/add-item">
                       <Plus className="h-4 w-4 mr-2" />
@@ -193,20 +196,32 @@ export default function DashboardPage() {
                 {loadingItems ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {[...Array(3)].map((_, i) => (
-                      <Card key={i} className="overflow-hidden animate-pulse">
-                        <div className="aspect-square bg-gray-200" />
+                      <Card key={i} className="overflow-hidden animate-pulse bg-white dark:bg-gray-800">
+                        <div className="aspect-square bg-gray-200 dark:bg-gray-700" />
                         <CardContent className="p-4">
-                          <div className="h-4 bg-gray-200 rounded mb-2" />
-                          <div className="h-3 bg-gray-200 rounded mb-2" />
-                          <div className="h-3 bg-gray-200 rounded" />
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded" />
                         </CardContent>
                       </Card>
                     ))}
                   </div>
+                ) : userItems.length === 0 ? (
+                  <Card className="text-center py-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No items yet</h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">Start by adding your first item to the platform.</p>
+                    <Button asChild>
+                      <Link href="/add-item">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Your First Item
+                      </Link>
+                    </Button>
+                  </Card>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {userItems.map((item) => (
-                      <Card key={item.id} className="overflow-hidden">
+                      <Card key={item._id} className="overflow-hidden hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                         <div className="aspect-square relative">
                           <Image
                             src={item.images[0] || "/placeholder.svg?height=200&width=200"}
@@ -214,167 +229,95 @@ export default function DashboardPage() {
                             fill
                             className="object-cover"
                           />
-                          <Badge
-                            className="absolute top-2 right-2"
-                            variant={item.status === "approved" && item.available ? "default" : "secondary"}
-                          >
-                            {item.status === "approved" && item.available
-                              ? "Available"
-                              : item.status === "pending"
-                                ? "Pending"
-                                : item.status === "rejected"
-                                  ? "Rejected"
-                                  : "Unavailable"}
-                          </Badge>
+                          <div className="absolute top-2 right-2">
+                            <Badge 
+                              variant={item.status === "approved" ? "default" : "secondary"}
+                              className={item.status === "approved" ? "bg-green-600 dark:bg-green-500" : ""}
+                            >
+                              {item.status}
+                            </Badge>
+                          </div>
                         </div>
                         <CardContent className="p-4">
-                          <h3 className="font-semibold mb-2">{item.title}</h3>
+                          <h4 className="font-semibold mb-2 text-gray-900 dark:text-white">{item.title}</h4>
                           <div className="flex items-center justify-between mb-2">
-                            <Badge variant="outline">{item.category}</Badge>
-                            <span className="text-sm text-gray-600">{item.condition}</span>
+                            <Badge variant="secondary">{item.category}</Badge>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">{item.condition}</span>
                           </div>
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="font-semibold text-green-600">{item.points} pts</span>
-                            <div className="flex items-center gap-3 text-sm text-gray-600">
-                              <span className="flex items-center gap-1">
-                                <Heart className="h-3 w-3" />
-                                {item.likes}
-                              </span>
-                              <span>{item.views} views</span>
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-green-600 dark:text-green-400">{item.points} pts</span>
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                              <Heart className="h-4 w-4" />
+                              {item.likes}
                             </div>
                           </div>
-                          <Button variant="outline" size="sm" className="w-full bg-transparent" asChild>
-                            <Link href={`/items/${item.id}`}>View Details</Link>
-                          </Button>
                         </CardContent>
                       </Card>
                     ))}
-                    {userItems.length === 0 && (
-                      <div className="col-span-full text-center py-8">
-                        <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600 mb-4">You haven't listed any items yet</p>
-                        <Button asChild>
-                          <Link href="/add-item">List Your First Item</Link>
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 )}
               </TabsContent>
 
               <TabsContent value="swaps" className="space-y-6">
-                <h2 className="text-2xl font-bold">Active Swaps</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Active Swaps</h2>
+                </div>
                 {loadingSwaps ? (
                   <div className="space-y-4">
-                    {[...Array(2)].map((_, i) => (
-                      <Card key={i} className="animate-pulse">
+                    {[...Array(3)].map((_, i) => (
+                      <Card key={i} className="animate-pulse bg-white dark:bg-gray-800">
                         <CardContent className="p-6">
-                          <div className="h-4 bg-gray-200 rounded mb-4" />
-                          <div className="h-3 bg-gray-200 rounded mb-2" />
-                          <div className="h-3 bg-gray-200 rounded" />
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded" />
                         </CardContent>
                       </Card>
                     ))}
                   </div>
+                ) : activeSwaps.length === 0 ? (
+                  <Card className="text-center py-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <ArrowUpDown className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No active swaps</h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">Start browsing items to make your first swap!</p>
+                    <Button asChild>
+                      <Link href="/browse">Browse Items</Link>
+                    </Button>
+                  </Card>
                 ) : (
                   <div className="space-y-4">
                     {activeSwaps.map((swap) => (
-                      <Card key={swap.id}>
+                      <Card key={swap._id} className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <Badge variant={swap.requester_id === user.id ? "default" : "secondary"}>
-                                {swap.requester_id === user.id ? "Outgoing" : "Incoming"}
-                              </Badge>
-                              <span className="font-semibold">{swap.owner_item.title}</span>
-                            </div>
-                            <Badge variant={swap.status === "approved" ? "default" : "outline"}>
-                              {swap.status.charAt(0).toUpperCase() + swap.status.slice(1)}
+                            <h4 className="font-semibold text-gray-900 dark:text-white">Swap Request</h4>
+                            <Badge 
+                              variant={swap.status === "accepted" ? "default" : "secondary"}
+                              className={swap.status === "accepted" ? "bg-green-600 dark:bg-green-500" : ""}
+                            >
+                              {swap.status}
                             </Badge>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm text-gray-600 mb-1">
-                                {swap.requester_id === user.id ? "Trading with" : "Request from"}
-                              </p>
-                              <p className="font-medium">
-                                {swap.requester_id === user.id
-                                  ? `${swap.owner.first_name} ${swap.owner.last_name}`
-                                  : `${swap.requester.first_name} ${swap.requester.last_name}`}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-600 mb-1">Type</p>
-                              <p className="font-medium capitalize">{swap.type}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between mt-4">
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
-                              <Clock className="h-4 w-4" />
-                              {new Date(swap.created_at).toLocaleDateString()}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm" asChild>
-                                <Link href={`/swaps/${swap.id}`}>View Details</Link>
-                              </Button>
-                            </div>
+                          {swap.message && (
+                            <p className="text-gray-600 dark:text-gray-300 mb-4">{swap.message}</p>
+                          )}
+                          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                            <span>Requested {new Date(swap.createdAt).toLocaleDateString()}</span>
+                            <Clock className="h-4 w-4" />
                           </div>
                         </CardContent>
                       </Card>
                     ))}
-                    {activeSwaps.length === 0 && (
-                      <div className="text-center py-8">
-                        <ArrowUpDown className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600 mb-4">No active swaps</p>
-                        <Button variant="outline" asChild>
-                          <Link href="/browse">Browse Items to Swap</Link>
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 )}
               </TabsContent>
 
               <TabsContent value="profile" className="space-y-6">
-                <h2 className="text-2xl font-bold">Profile Settings</h2>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Personal Information</CardTitle>
-                    <CardDescription>Update your profile details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium">First Name</label>
-                        <input className="w-full mt-1 px-3 py-2 border rounded-md" defaultValue={user.first_name} />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">Last Name</label>
-                        <input className="w-full mt-1 px-3 py-2 border rounded-md" defaultValue={user.last_name} />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Email</label>
-                      <input className="w-full mt-1 px-3 py-2 border rounded-md" defaultValue={user.email} />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Location</label>
-                      <input
-                        className="w-full mt-1 px-3 py-2 border rounded-md"
-                        defaultValue={user.location || ""}
-                        placeholder="City, State"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Bio</label>
-                      <textarea
-                        className="w-full mt-1 px-3 py-2 border rounded-md"
-                        rows={3}
-                        defaultValue={user.bio || ""}
-                        placeholder="Tell others about yourself and your style preferences..."
-                      />
-                    </div>
-                    <Button>Save Changes</Button>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Profile Settings</h2>
+                </div>
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <CardContent className="p-6">
+                    <p className="text-gray-600 dark:text-gray-300">Profile settings and preferences will be available here.</p>
                   </CardContent>
                 </Card>
               </TabsContent>

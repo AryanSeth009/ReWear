@@ -3,246 +3,195 @@ import { ObjectId } from "mongodb"
 
 export interface Item {
   _id: string
-  userId: string
   title: string
   description: string
   category: string
-  type: string
   size: string
   condition: string
-  points: number
-  tags: string[]
   images: string[]
-  status: "pending" | "approved" | "rejected" | "swapped" | "redeemed"
-  views: number
-  likes: number
-  available: boolean
-  createdAt: Date
-  updatedAt: Date
+  points: number
+  userId: string
   user?: {
-    _id: string
     firstName: string
     lastName: string
-    email: string
     rating: number
-    totalSwaps: number
-    location?: string
   }
-  isLiked?: boolean
+  status: "pending" | "approved" | "rejected" | "swapped"
+  likes: number
+  views: number
+  createdAt: Date
+  updatedAt: Date
 }
 
-export async function getItems(filters?: {
-  category?: string
-  condition?: string
-  size?: string
-  search?: string
-  userId?: string
-  status?: string
-}) {
+export async function createItem(
+  itemData: Omit<Item, "_id" | "likes" | "views" | "createdAt" | "updatedAt">,
+): Promise<Item> {
   const db = await getDatabase()
-  const items = db.collection("items")
+
+  const result = await db.collection("items").insertOne({
+    ...itemData,
+    likes: 0,
+    views: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  })
+
+  return {
+    _id: result.insertedId.toString(),
+    ...itemData,
+    likes: 0,
+    views: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
+}
+
+export async function getItems(
+  filters: {
+    category?: string
+    condition?: string
+    size?: string
+    search?: string
+    status?: string
+    limit?: number
+    skip?: number
+  } = {},
+): Promise<Item[]> {
+  const db = await getDatabase()
 
   const query: any = {}
-
-  if (filters?.category && filters.category !== "all") {
-    query.category = filters.category
-  }
-
-  if (filters?.condition && filters.condition !== "all") {
-    query.condition = filters.condition
-  }
-
-  if (filters?.size && filters.size !== "all") {
-    query.size = filters.size
-  }
-
-  if (filters?.search) {
+  if (filters.category) query.category = filters.category
+  if (filters.condition) query.condition = filters.condition
+  if (filters.size) query.size = filters.size
+  if (filters.status) query.status = filters.status
+  if (filters.search) {
     query.$or = [
       { title: { $regex: filters.search, $options: "i" } },
       { description: { $regex: filters.search, $options: "i" } },
     ]
   }
 
-  if (filters?.userId) {
-    query.userId = filters.userId
-  }
-
-  if (filters?.status) {
-    query.status = filters.status
-  } else {
-    query.status = "approved"
-    query.available = true
-  }
-
-  const pipeline = [
-    { $match: query },
-    {
-      $lookup: {
-        from: "users",
-        let: { userId: { $toObjectId: "$userId" } },
-        pipeline: [{ $match: { $expr: { $eq: ["$_id", "$$userId"] } } }, { $project: { password: 0 } }],
-        as: "user",
+  const items = await db
+    .collection("items")
+    .aggregate([
+      { $match: query },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
       },
-    },
-    { $unwind: "$user" },
-    { $sort: { createdAt: -1 } },
-  ]
+      { $unwind: "$user" },
+      {
+        $project: {
+          title: 1,
+          description: 1,
+          category: 1,
+          size: 1,
+          condition: 1,
+          images: 1,
+          points: 1,
+          userId: 1,
+          status: 1,
+          likes: 1,
+          views: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          "user.firstName": 1,
+          "user.lastName": 1,
+          "user.rating": 1,
+        },
+      },
+      { $sort: { createdAt: -1 } },
+      { $skip: filters.skip || 0 },
+      { $limit: filters.limit || 20 },
+    ])
+    .toArray()
 
-  const result = await items.aggregate(pipeline).toArray()
-
-  return result.map((item) => ({
+  return items.map((item) => ({
     ...item,
     _id: item._id.toString(),
-    user: {
-      ...item.user,
-      _id: item.user._id.toString(),
-    },
-  })) as Item[]
+    userId: item.userId.toString(),
+  }))
 }
 
-export async function getItemById(id: string, userId?: string) {
+export async function getFeaturedItems(): Promise<Item[]> {
+  return getItems({ status: "approved", limit: 8 })
+}
+
+export async function getItemById(id: string): Promise<Item | null> {
   const db = await getDatabase()
-  const items = db.collection("items")
 
-  // Increment view count
-  await items.updateOne({ _id: new ObjectId(id) }, { $inc: { views: 1 } })
-
-  const pipeline = [
-    { $match: { _id: new ObjectId(id) } },
-    {
-      $lookup: {
-        from: "users",
-        let: { userId: { $toObjectId: "$userId" } },
-        pipeline: [{ $match: { $expr: { $eq: ["$_id", "$$userId"] } } }, { $project: { password: 0 } }],
-        as: "user",
+  const items = await db
+    .collection("items")
+    .aggregate([
+      { $match: { _id: new ObjectId(id) } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
       },
-    },
-    { $unwind: "$user" },
-  ]
+      { $unwind: "$user" },
+      {
+        $project: {
+          title: 1,
+          description: 1,
+          category: 1,
+          size: 1,
+          condition: 1,
+          images: 1,
+          points: 1,
+          userId: 1,
+          status: 1,
+          likes: 1,
+          views: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          "user.firstName": 1,
+          "user.lastName": 1,
+          "user.rating": 1,
+        },
+      },
+    ])
+    .toArray()
 
-  const result = await items.aggregate(pipeline).toArray()
-  if (result.length === 0) throw new Error("Item not found")
+  if (items.length === 0) return null
 
-  const item = result[0]
-
-  // Check if user has liked this item
-  let isLiked = false
-  if (userId) {
-    const likes = db.collection("likes")
-    const like = await likes.findOne({ userId, itemId: id })
-    isLiked = !!like
-  }
-
+  const item = items[0]
   return {
     ...item,
     _id: item._id.toString(),
-    user: {
-      ...item.user,
-      _id: item.user._id.toString(),
-    },
-    isLiked,
-  } as Item
-}
-
-export async function createItem(item: Omit<Item, "_id" | "views" | "likes" | "createdAt" | "updatedAt">) {
-  const db = await getDatabase()
-  const items = db.collection("items")
-
-  const newItem = {
-    ...item,
-    views: 0,
-    likes: 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    userId: item.userId.toString(),
   }
-
-  const result = await items.insertOne(newItem)
-  return { ...newItem, _id: result.insertedId.toString() }
 }
 
-export async function updateItem(id: string, updates: Partial<Item>) {
+export async function updateItemViews(id: string): Promise<void> {
   const db = await getDatabase()
-  const items = db.collection("items")
-
-  const result = await items.findOneAndUpdate(
-    { _id: new ObjectId(id) },
-    {
-      $set: {
-        ...updates,
-        updatedAt: new Date(),
-      },
-    },
-    { returnDocument: "after" },
-  )
-
-  if (!result) throw new Error("Item not found")
-  return { ...result, _id: result._id.toString() }
+  await db.collection("items").updateOne({ _id: new ObjectId(id) }, { $inc: { views: 1 } })
 }
 
-export async function deleteItem(id: string) {
+export async function likeItem(itemId: string, userId: string): Promise<void> {
   const db = await getDatabase()
-  const items = db.collection("items")
 
-  const result = await items.deleteOne({ _id: new ObjectId(id) })
-  if (result.deletedCount === 0) throw new Error("Item not found")
-}
-
-export async function toggleLike(userId: string, itemId: string) {
-  const db = await getDatabase()
-  const likes = db.collection("likes")
-  const items = db.collection("items")
-
-  const existingLike = await likes.findOne({ userId, itemId })
+  const existingLike = await db.collection("likes").findOne({
+    itemId: new ObjectId(itemId),
+    userId: new ObjectId(userId),
+  })
 
   if (existingLike) {
-    // Unlike
-    await likes.deleteOne({ userId, itemId })
-    await items.updateOne({ _id: new ObjectId(itemId) }, { $inc: { likes: -1 } })
-    return false
+    await db.collection("likes").deleteOne({ _id: existingLike._id })
+    await db.collection("items").updateOne({ _id: new ObjectId(itemId) }, { $inc: { likes: -1 } })
   } else {
-    // Like
-    await likes.insertOne({
-      userId,
-      itemId,
+    await db.collection("likes").insertOne({
+      itemId: new ObjectId(itemId),
+      userId: new ObjectId(userId),
       createdAt: new Date(),
     })
-    await items.updateOne({ _id: new ObjectId(itemId) }, { $inc: { likes: 1 } })
-    return true
+    await db.collection("items").updateOne({ _id: new ObjectId(itemId) }, { $inc: { likes: 1 } })
   }
-}
-
-export async function getFeaturedItems() {
-  const db = await getDatabase()
-  const items = db.collection("items")
-
-  const pipeline = [
-    {
-      $match: {
-        status: "approved",
-        available: true,
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        let: { userId: { $toObjectId: "$userId" } },
-        pipeline: [{ $match: { $expr: { $eq: ["$_id", "$$userId"] } } }, { $project: { firstName: 1, lastName: 1 } }],
-        as: "user",
-      },
-    },
-    { $unwind: "$user" },
-    { $sort: { likes: -1 } },
-    { $limit: 4 },
-  ]
-
-  const result = await items.aggregate(pipeline).toArray()
-
-  return result.map((item) => ({
-    ...item,
-    _id: item._id.toString(),
-    user: {
-      ...item.user,
-      _id: item.user._id.toString(),
-    },
-  }))
 }

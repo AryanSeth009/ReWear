@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Recycle, Users, Shirt, Award } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
+import { Chatbot } from "@/components/chatbot"
 
 export default function HomePage() {
   const { user } = useAuth()
@@ -277,6 +278,9 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Chatbot */}
+      <Chatbot />
     </div>
   )
 }

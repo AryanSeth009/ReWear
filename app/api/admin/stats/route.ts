@@ -1,12 +1,23 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { getAdminStats } from "@/lib/admin"
-import { getCurrentUser } from "@/lib/auth"
+import { verifyToken, getUserById } from "@/lib/auth"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    const token = request.cookies.get("auth-token")?.value
+
+    if (!token) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+
+    const decoded = verifyToken(token)
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    const user = await getUserById(decoded.userId)
     if (!user?.isAdmin) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 })
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
     }
 
     const stats = await getAdminStats()

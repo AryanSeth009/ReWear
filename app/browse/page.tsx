@@ -20,30 +20,7 @@ export default function BrowsePage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login")
-    }
-  }, [user, authLoading, router])
-
-  // Show loading while checking auth
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors duration-300">
-        <div className="text-center">
-          <Recycle className="h-12 w-12 text-green-600 dark:text-green-400 mx-auto mb-4 animate-spin" />
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Don't render anything if not authenticated (will redirect)
-  if (!user) {
-    return null
-  }
-
+  // All hooks must be called at the top level
   const [items, setItems] = useState<any[]>([])
   const [itemsLoading, setItemsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -54,9 +31,12 @@ export default function BrowsePage() {
   const [sortBy, setSortBy] = useState("newest")
   const [showFilters, setShowFilters] = useState(false)
 
-  const categories = ["Tops", "Bottoms", "Dresses", "Outerwear", "Footwear", "Accessories"]
-  const conditions = ["Like New", "Excellent", "Good", "Fair"]
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL"]
+  // All useEffect hooks must be at the top level
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login")
+    }
+  }, [user, authLoading, router])
 
   // Debounce search term
   useEffect(() => {
@@ -66,10 +46,6 @@ export default function BrowsePage() {
 
     return () => clearTimeout(timer)
   }, [searchTerm])
-
-  useEffect(() => {
-    loadItems()
-  }, [debouncedSearchTerm, selectedCategory, selectedCondition, selectedSize, sortBy])
 
   const loadItems = async () => {
     try {
@@ -92,6 +68,33 @@ export default function BrowsePage() {
       setItemsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (user) {
+      loadItems()
+    }
+  }, [debouncedSearchTerm, selectedCategory, selectedCondition, selectedSize, sortBy, user])
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors duration-300">
+        <div className="text-center">
+          <Recycle className="h-12 w-12 text-green-600 dark:text-green-400 mx-auto mb-4 animate-spin" />
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!user) {
+    return null
+  }
+
+  const categories = ["Tops", "Bottoms", "Dresses", "Outerwear", "Footwear", "Accessories"]
+  const conditions = ["Like New", "Excellent", "Good", "Fair"]
+  const sizes = ["XS", "S", "M", "L", "XL", "XXL"]
 
   const clearFilters = () => {
     setSearchTerm("")

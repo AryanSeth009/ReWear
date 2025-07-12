@@ -17,6 +17,23 @@ const AddItem = () => {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  // All hooks must be called at the top level
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: '',
+    type: '',
+    size: '',
+    condition: '',
+    tags: ''
+  });
+
+  const [images, setImages] = useState<string[]>([]);
+  const [currentTag, setCurrentTag] = useState('');
+  const [tagList, setTagList] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
@@ -40,22 +57,6 @@ const AddItem = () => {
   if (!user) {
     return null;
   }
-
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    type: '',
-    size: '',
-    condition: '',
-    tags: ''
-  });
-
-  const [images, setImages] = useState<string[]>([]);
-  const [currentTag, setCurrentTag] = useState('');
-  const [tagList, setTagList] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const categories = [
     'Tops', 'Bottoms', 'Dresses', 'Jackets', 'Shoes', 'Accessories', 'Activewear', 'Formal'
@@ -105,10 +106,37 @@ const AddItem = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    
+    try {
+      const response = await fetch('/api/items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
+          size: formData.size,
+          condition: formData.condition,
+          images: images,
+          points: 0, // Default points
+        }),
+      });
+
+      if (response.ok) {
+        setIsSubmitted(true);
+      } else {
+        const error = await response.json();
+        console.error('Error creating item:', error);
+        alert('Failed to create item. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating item:', error);
+      alert('Failed to create item. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {

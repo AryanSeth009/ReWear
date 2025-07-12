@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -77,19 +77,74 @@ const stats = {
 export default function AdminPage() {
   const [selectedItem, setSelectedItem] = useState<any>(null)
   const [rejectionReason, setRejectionReason] = useState("")
+  const [pendingItems, setPendingItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const handleApprove = (itemId: number) => {
-    console.log("Approved item:", itemId)
-    // Handle approval logic
+  // Load pending items
+  useEffect(() => {
+    const loadPendingItems = async () => {
+      try {
+        const response = await fetch('/api/admin/items/pending')
+        if (response.ok) {
+          const items = await response.json()
+          setPendingItems(items)
+        }
+      } catch (error) {
+        console.error('Error loading pending items:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadPendingItems()
+  }, [])
+
+  const handleApprove = async (itemId: string) => {
+    try {
+      const response = await fetch('/api/admin/items/pending', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemId,
+          action: 'approve'
+        }),
+      })
+
+      if (response.ok) {
+        // Remove item from pending list
+        setPendingItems(prev => prev.filter(item => item._id !== itemId))
+      }
+    } catch (error) {
+      console.error('Error approving item:', error)
+    }
   }
 
-  const handleReject = (itemId: number, reason: string) => {
-    console.log("Rejected item:", itemId, "Reason:", reason)
-    setRejectionReason("")
-    // Handle rejection logic
+  const handleReject = async (itemId: string, reason: string) => {
+    try {
+      const response = await fetch('/api/admin/items/pending', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemId,
+          action: 'reject'
+        }),
+      })
+
+      if (response.ok) {
+        // Remove item from pending list
+        setPendingItems(prev => prev.filter(item => item._id !== itemId))
+        setRejectionReason("")
+      }
+    } catch (error) {
+      console.error('Error rejecting item:', error)
+    }
   }
 
-  const handleRemoveItem = (itemId: number) => {
+  const handleRemoveItem = (itemId: string) => {
     console.log("Removed item:", itemId)
     // Handle item removal logic
   }
@@ -216,119 +271,136 @@ export default function AdminPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pendingItems.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Image
-                              src={item.image || "/placeholder.svg"}
-                              alt={item.title}
-                              width={50}
-                              height={50}
-                              className="rounded-md object-cover"
-                            />
-                            <span className="font-medium">{item.title}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{item.user}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{item.category}</Badge>
-                        </TableCell>
-                        <TableCell>{item.condition}</TableCell>
-                        <TableCell>{item.dateSubmitted}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="ghost" size="sm" onClick={() => setSelectedItem(item)}>
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Review Item: {item.title}</DialogTitle>
-                                  <DialogDescription>
-                                    Submitted by {item.user} on {item.dateSubmitted}
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  <div className="aspect-video relative rounded-lg overflow-hidden">
-                                    <Image
-                                      src={item.image || "/placeholder.svg"}
-                                      alt={item.title}
-                                      fill
-                                      className="object-cover"
-                                    />
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <Label>Category</Label>
-                                      <p>{item.category}</p>
-                                    </div>
-                                    <div>
-                                      <Label>Condition</Label>
-                                      <p>{item.condition}</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button onClick={() => handleApprove(item.id)} className="flex-1">
-                                      <CheckCircle className="h-4 w-4 mr-2" />
-                                      Approve
-                                    </Button>
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="destructive" className="flex-1">
-                                          <XCircle className="h-4 w-4 mr-2" />
-                                          Reject
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent>
-                                        <DialogHeader>
-                                          <DialogTitle>Reject Item</DialogTitle>
-                                          <DialogDescription>
-                                            Please provide a reason for rejecting this item
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-4">
-                                          <div>
-                                            <Label htmlFor="reason">Rejection Reason</Label>
-                                            <Textarea
-                                              id="reason"
-                                              placeholder="Please explain why this item is being rejected..."
-                                              value={rejectionReason}
-                                              onChange={(e) => setRejectionReason(e.target.value)}
-                                              rows={3}
-                                            />
-                                          </div>
-                                          <div className="flex gap-2">
-                                            <Button
-                                              variant="destructive"
-                                              onClick={() => handleReject(item.id, rejectionReason)}
-                                              className="flex-1"
-                                            >
-                                              Confirm Rejection
-                                            </Button>
-                                            <Button variant="outline" className="flex-1 bg-transparent">
-                                              Cancel
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                            <Button variant="outline" size="sm" onClick={() => handleApprove(item.id)}>
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button variant="destructive" size="sm">
-                              <XCircle className="h-4 w-4" />
-                            </Button>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                            <span className="ml-2">Loading pending items...</span>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : pendingItems.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <p className="text-gray-500">No pending items to review</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      pendingItems.map((item) => (
+                        <TableRow key={item._id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Image
+                                src={item.images?.[0] || "/placeholder.svg"}
+                                alt={item.title}
+                                width={50}
+                                height={50}
+                                className="rounded-md object-cover"
+                              />
+                              <span className="font-medium">{item.title}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{`${item.user?.firstName} ${item.user?.lastName}`}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{item.category}</Badge>
+                          </TableCell>
+                          <TableCell>{item.condition}</TableCell>
+                          <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" onClick={() => setSelectedItem(item)}>
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Review Item: {item.title}</DialogTitle>
+                                    <DialogDescription>
+                                      Submitted by {`${item.user?.firstName} ${item.user?.lastName}`} on {new Date(item.createdAt).toLocaleDateString()}
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div className="aspect-video relative rounded-lg overflow-hidden">
+                                      <Image
+                                        src={item.images?.[0] || "/placeholder.svg"}
+                                        alt={item.title}
+                                        fill
+                                        className="object-cover"
+                                      />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <Label>Category</Label>
+                                        <p>{item.category}</p>
+                                      </div>
+                                      <div>
+                                        <Label>Condition</Label>
+                                        <p>{item.condition}</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button onClick={() => handleApprove(item._id)} className="flex-1">
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                        Approve
+                                      </Button>
+                                      <Dialog>
+                                        <DialogTrigger asChild>
+                                          <Button variant="destructive" className="flex-1">
+                                            <XCircle className="h-4 w-4 mr-2" />
+                                            Reject
+                                          </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                          <DialogHeader>
+                                            <DialogTitle>Reject Item</DialogTitle>
+                                            <DialogDescription>
+                                              Please provide a reason for rejecting this item
+                                            </DialogDescription>
+                                          </DialogHeader>
+                                          <div className="space-y-4">
+                                            <div>
+                                              <Label htmlFor="reason">Rejection Reason</Label>
+                                              <Textarea
+                                                id="reason"
+                                                placeholder="Please explain why this item is being rejected..."
+                                                value={rejectionReason}
+                                                onChange={(e) => setRejectionReason(e.target.value)}
+                                                rows={3}
+                                              />
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <Button
+                                                variant="destructive"
+                                                onClick={() => handleReject(item._id, rejectionReason)}
+                                                className="flex-1"
+                                              >
+                                                Confirm Rejection
+                                              </Button>
+                                              <Button variant="outline" className="flex-1 bg-transparent">
+                                                Cancel
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </DialogContent>
+                                      </Dialog>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                              <Button variant="outline" size="sm" onClick={() => handleApprove(item._id)}>
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                              <Button variant="destructive" size="sm">
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -379,7 +451,7 @@ export default function AdminPage() {
                             <Button variant="ghost" size="sm">
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleRemoveItem(item.id)}>
+                            <Button variant="destructive" size="sm" onClick={() => handleRemoveItem(item.id.toString())}>
                               Remove
                             </Button>
                             <Button variant="outline" size="sm">

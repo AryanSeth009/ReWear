@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -11,11 +11,63 @@ import { useAuth } from "@/components/auth-provider"
 import { Chatbot } from "@/components/chatbot"
 import { ThemeToggle } from "@/components/theme-provider"
 import { AnimatedCounter } from "@/components/animated-counter"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel"
+import type { UseEmblaCarouselType } from 'embla-carousel-react'
+import { useRouter } from "next/navigation"
 
 export default function HomePage() {
   const { user } = useAuth()
+  const router = useRouter()
   const [featuredItems, setFeaturedItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const carouselApi = useRef<UseEmblaCarouselType[1] | null>(null)
+
+  // Add ref for stats section
+  const statsRef = useRef<HTMLDivElement>(null);
+  const [statsVisible, setStatsVisible] = useState(false);
+
+  // Parallax state
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setStatsVisible(true);
+          }
+        });
+      },
+      { threshold: 0.4 }
+    );
+    if (statsRef.current) {
+      observer.observe(statsRef.current);
+    }
+    return () => {
+      if (statsRef.current) {
+        observer.unobserve(statsRef.current);
+      }
+    };
+  }, []);
+
+  const handleProtectedLink = (path: string) => {
+    if (user) {
+      router.push(path)
+    } else {
+      router.push("/login")
+    }
+  }
 
   useEffect(() => {
     async function loadFeaturedItems() {
@@ -35,6 +87,16 @@ export default function HomePage() {
     loadFeaturedItems()
   }, [])
 
+  useEffect(() => {
+    if (!carouselApi.current) return
+    const interval = setInterval(() => {
+      if (carouselApi.current) {
+        carouselApi.current.scrollNext?.()
+      }
+    }, 3500)
+    return () => clearInterval(interval)
+  }, [carouselApi.current])
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-100">
       {/* Floating, sticky, glassmorphic navbar */}
@@ -43,12 +105,47 @@ export default function HomePage() {
           <Recycle className="h-8 w-8 text-green-600 dark:text-green-400" />
           <h1 className="text-2xl font-bold text-green-800 dark:text-green-400">ReWear</h1>
         </div>
-        <nav className="hidden md:flex items-center gap-8">
-          <Link href="/how-it-works" className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium transition-colors">How it works</Link>
-          <Link href="/browse" className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium transition-colors">Browse</Link>
-          <Link href="/add-item" className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium transition-colors">List an Item</Link>
+        <style jsx>{`
+          .nav-anim-link {
+            position: relative;
+            display: inline-block;
+            padding-bottom: 4px;
+            transition: color 0.2s;
+          }
+          .nav-anim-link:after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%) scaleX(0);
+            width: 70%;
+            height: 3px;
+            background: #10b981;
+            border-radius: 2px;
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            z-index: 1;
+          }
+          .nav-anim-link:hover:after, .nav-anim-link:focus-visible:after {
+            transform: translateX(-50%) scaleX(1);
+          }
+        `}</style>
+        <nav className="hidden md:flex items-center gap-6">
+          <Link href="/how-it-works" className="nav-anim-link text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium transition-colors">How it works</Link>
+          <button 
+            onClick={() => handleProtectedLink("/browse")}
+            className="nav-anim-link text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium transition-colors"
+          >
+            Browse
+          </button>
+          <button 
+            onClick={() => handleProtectedLink("/add-item")}
+            className="nav-anim-link text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium transition-colors"
+          >
+            List an Item
+          </button>
         </nav>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Button variant="ghost" asChild className="text-gray-700 dark:text-gray-200">
             <Link href="/login">Sign In</Link>
           </Button>
@@ -57,8 +154,7 @@ export default function HomePage() {
           </Button>
         </div>
       </header>
-
-      {/* Hero Section - no cards, heading and image adjacent, animated heading */}
+      {/* Hero Section - animated green gradient background */}
       <section className="w-full min-h-[calc(100vh-80px)] flex flex-col justify-center items-center bg-[linear-gradient(120deg,#10b981_0%,#059669_50%,#047857_100%)] dark:bg-[linear-gradient(120deg,#134e4a_0%,#166534_50%,#22c55e_100%)] bg-[length:200%_200%] animate-gradient-move p-0 transition-colors duration-300">
         <style jsx global>{`
           @keyframes gradient-move {
@@ -88,10 +184,10 @@ export default function HomePage() {
             </p>
             <div className="flex gap-4">
               <Button size="lg" asChild className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl shadow-lg">
-                <Link href={user ? "/browse" : "/signup"}>Start Swapping</Link>
+                <Link href={user ? "/browse" : "/login"}>Start Swapping</Link>
               </Button>
               <Button size="lg" variant="outline" asChild className="border-white text-white bg-white/20 hover:bg-white/30 dark:border-white/60 dark:text-white dark:bg-white/10 dark:hover:bg-white/20 text-lg px-8 py-4 rounded-xl shadow-lg">
-                <Link href="/browse">Browse Items</Link>
+                <Link href={user ? "/browse" : "/login"}>Browse Items</Link>
               </Button>
             </div>
           </div>
@@ -108,127 +204,116 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white dark:bg-gray-900 transition-colors duration-300">
+      <section ref={statsRef} className="py-16 bg-gray-900 transition-colors duration-300">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-            <div className="flex flex-col items-center">
-              <Users className="h-12 w-12 text-green-600 dark:text-green-400 mb-4" />
-              <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
-                <AnimatedCounter end={2500} suffix="+" />
+            <div className="flex flex-col items-center bg-gray-800 rounded-xl p-8 shadow-lg animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+              <Users className="h-12 w-12 text-green-400 mb-4" />
+              <h3 className="text-3xl font-bold text-white">
+                {statsVisible ? <AnimatedCounter end={2500} suffix="+" /> : '0+'}
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">Active Members</p>
+              <p className="text-gray-300">Active Members</p>
             </div>
-            <div className="flex flex-col items-center">
-              <Shirt className="h-12 w-12 text-green-600 dark:text-green-400 mb-4" />
-              <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
-                <AnimatedCounter end={15000} suffix="+" />
+            <div className="flex flex-col items-center bg-gray-800 rounded-xl p-8 shadow-lg animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+              <Shirt className="h-12 w-12 text-green-400 mb-4" />
+              <h3 className="text-3xl font-bold text-white">
+                {statsVisible ? <AnimatedCounter end={15000} suffix="+" /> : '0+'}
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">Items Exchanged</p>
+              <p className="text-gray-300">Items Exchanged</p>
             </div>
-            <div className="flex flex-col items-center">
-              <Recycle className="h-12 w-12 text-green-600 dark:text-green-400 mb-4" />
-              <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
-                <AnimatedCounter end={8200} suffix="kg" />
+            <div className="flex flex-col items-center bg-gray-800 rounded-xl p-8 shadow-lg animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+              <Recycle className="h-12 w-12 text-green-400 mb-4" />
+              <h3 className="text-3xl font-bold text-white">
+                {statsVisible ? <AnimatedCounter end={8200} suffix="kg" /> : '0kg'}
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">Textile Waste Saved</p>
+              <p className="text-gray-300">Textile Waste Saved</p>
             </div>
-            <div className="flex flex-col items-center">
-              <Award className="h-12 w-12 text-green-600 dark:text-green-400 mb-4" />
-              <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
-                <AnimatedCounter end={98} suffix="%" />
+            <div className="flex flex-col items-center bg-gray-800 rounded-xl p-8 shadow-lg animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+              <Award className="h-12 w-12 text-green-400 mb-4" />
+              <h3 className="text-3xl font-bold text-white">
+                {statsVisible ? <AnimatedCounter end={98} suffix="%" /> : '0%'}
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">Satisfaction Rate</p>
+              <p className="text-gray-300">Satisfaction Rate</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Featured Items */}
-      <section className="py-16 px-4 bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
+      <section className="py-20 bg-gradient-to-b from-gray-900 to-green-900 transition-colors duration-300">
         <div className="container mx-auto">
-          <h3 className="text-3xl font-bold text-center mb-12 text-gray-900 dark:text-white">Featured Items</h3>
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i} className="overflow-hidden animate-pulse bg-white dark:bg-gray-900">
-                  <div className="aspect-square bg-gray-200 dark:bg-gray-700" />
-                  <CardContent className="p-4">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredItems.map((item) => (
-                <Card key={item._id} className="overflow-hidden hover:shadow-lg transition-shadow bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                  <div className="aspect-square relative">
-                    <Image
-                      src={item.images[0] || "/placeholder.svg?height=200&width=200"}
-                      alt={item.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold mb-2 text-gray-900 dark:text-white">{item.title}</h4>
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge variant="secondary">{item.category}</Badge>
-                      <span className="text-sm text-gray-600 dark:text-gray-300">{item.condition}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-300">
-                        by {item.user?.firstName} {item.user?.lastName?.[0]}.
-                      </span>
-                      <span className="font-semibold text-green-600 dark:text-green-400">{item.points} pts</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-          <div className="text-center mt-8">
-            <Button variant="outline" asChild>
-              <Link href="/browse">View All Items</Link>
-            </Button>
+          <h3 className="text-3xl font-bold text-center mb-12 text-white">Featured Items</h3>
+          <div className="relative bg-gray-800 rounded-2xl p-6 shadow-2xl">
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+                skipSnaps: false,
+                slidesToScroll: 1,
+                dragFree: true,
+                breakpoints: {
+                  '(min-width: 1024px)': { slidesToScroll: 4 },
+                  '(max-width: 1023px)': { slidesToScroll: 2 },
+                },
+              }}
+              className="w-full"
+              setApi={api => (carouselApi.current = api ?? null)}
+            >
+              <CarouselContent className="">
+                {(loading ? Array.from({ length: 4 }) : featuredItems).map((item, i) => (
+                  <CarouselItem
+                    key={item?._id || i}
+                    className="basis-full sm:basis-1/2 lg:basis-1/4 px-2 animate-fade-in-up"
+                    style={{ animationDelay: `${0.1 + i * 0.1}s` }}
+                  >
+                    <Card className={`overflow-hidden ${loading ? 'animate-pulse bg-gray-700' : 'hover:shadow-xl transition-shadow bg-gray-900 border-gray-700'} rounded-xl`}>
+                      <div className="aspect-square relative">
+                        {loading ? (
+                          <div className="w-full h-full bg-gray-600" />
+                        ) : (
+                          <Image
+                            src={item.images?.[0] || "/placeholder.svg?height=200&width=200"}
+                            alt={item.title}
+                            fill
+                            className="object-cover"
+                          />
+                        )}
+                      </div>
+                      <CardContent className="p-4">
+                        {loading ? (
+                          <>
+                            <div className="h-4 bg-gray-600 rounded mb-2" />
+                            <div className="h-3 bg-gray-600 rounded mb-2" />
+                            <div className="h-3 bg-gray-600 rounded" />
+                          </>
+                        ) : (
+                          <>
+                            <h4 className="font-semibold mb-2 text-white">{item.title}</h4>
+                            <div className="flex items-center justify-between mb-2">
+                              <Badge variant="secondary">{item.category}</Badge>
+                              <span className="text-sm text-gray-300">{item.condition}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-300">
+                                by {item.user?.firstName} {item.user?.lastName?.[0]}.
+                              </span>
+                              <span className="font-semibold text-green-400">{item.points} pts</span>
+                            </div>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="-left-6" />
+              <CarouselNext className="-right-6" />
+            </Carousel>
           </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-16 bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
-        <div className="container mx-auto px-4">
-          <h3 className="text-3xl font-bold text-center mb-12 text-gray-900 dark:text-white">How ReWear Works</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-green-600 dark:text-green-400">1</span>
-              </div>
-              <h4 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">List Your Items</h4>
-              <p className="text-gray-600 dark:text-gray-300">
-                Upload photos and details of clothes you no longer wear. Earn points for each approved listing.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-green-600 dark:text-green-400">2</span>
-              </div>
-              <h4 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Browse & Request</h4>
-              <p className="text-gray-600 dark:text-gray-300">
-                Discover amazing pre-loved items. Request swaps or use your points to redeem items you love.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-green-600 dark:text-green-400">3</span>
-              </div>
-              <h4 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Swap & Enjoy</h4>
-              <p className="text-gray-600 dark:text-gray-300">
-                Complete the exchange and enjoy your new-to-you clothing while helping the environment.
-              </p>
-            </div>
+          <div className="text-center mt-8">
+            <Button variant="outline" asChild className="border-green-400 text-green-400 hover:bg-green-900 hover:text-white transition-all duration-300">
+              <Link href={user ? "/browse" : "/login"}>View All Items</Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -248,10 +333,10 @@ export default function HomePage() {
               <h5 className="font-semibold mb-4">Platform</h5>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Link href="/browse" className="hover:text-white transition-colors">Browse Items</Link>
+                  <Link href={user ? "/browse" : "/login"} className="hover:text-white transition-colors">Browse Items</Link>
                 </li>
                 <li>
-                  <Link href="/add-item" className="hover:text-white transition-colors">List an Item</Link>
+                  <Link href={user ? "/add-item" : "/login"} className="hover:text-white transition-colors">List an Item</Link>
                 </li>
                 <li>
                   <Link href="/how-it-works" className="hover:text-white transition-colors">How It Works</Link>

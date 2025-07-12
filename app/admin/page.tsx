@@ -19,6 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Recycle, Shield, CheckCircle, XCircle, Eye, Users, Package, AlertTriangle, TrendingUp } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-provider"
 
 const pendingItems = [
   {
@@ -103,6 +104,7 @@ export default function AdminPage() {
             <h1 className="text-2xl font-bold text-green-800">ReWear Admin</h1>
           </Link>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Badge variant="secondary" className="flex items-center gap-1">
               <Shield className="h-3 w-3" />
               Admin Panel

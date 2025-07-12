@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { ThemeToggle } from "@/components/theme-provider"
 import {
   Recycle,
   ArrowLeft,
@@ -100,6 +101,7 @@ export default function ItemDetailPage() {
             </Link>
           </nav>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" asChild>
               <Link href="/login">Login</Link>
             </Button>

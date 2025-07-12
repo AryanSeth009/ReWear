@@ -10,12 +10,41 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Recycle, Plus, Star, Package, ArrowUpDown, Settings, LogOut, User, Heart, Clock } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
-import { getItems } from "@/lib/items"
-import { getSwapsByUser } from "@/lib/swaps"
-import { signOutAction } from "@/app/actions/auth"
 import { ThemeToggle } from "@/components/theme-provider"
-import type { Item } from "@/lib/items"
-import type { Swap } from "@/lib/swaps"
+
+// Types
+interface Item {
+  _id: string
+  title: string
+  description: string
+  category: string
+  size: string
+  condition: string
+  images: string[]
+  points: number
+  userId: string
+  user?: {
+    firstName: string
+    lastName: string
+    rating: number
+  }
+  status: "pending" | "approved" | "rejected" | "swapped"
+  likes: number
+  views: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+interface Swap {
+  _id: string
+  itemId: string
+  requesterId: string
+  ownerId: string
+  status: "pending" | "accepted" | "rejected" | "completed"
+  message?: string
+  createdAt: Date
+  updatedAt: Date
+}
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
@@ -33,9 +62,11 @@ export default function DashboardPage() {
 
   const loadUserItems = async () => {
     try {
-      // For now, we'll load all items since the getItems function doesn't support userId filter
-      const items = await getItems()
-      setUserItems(items.filter(item => item.userId === user!._id))
+      const response = await fetch(`/api/items?userId=${user!._id}`)
+      if (response.ok) {
+        const items = await response.json()
+        setUserItems(items)
+      }
     } catch (error) {
       console.error("Error loading user items:", error)
     } finally {
@@ -45,12 +76,26 @@ export default function DashboardPage() {
 
   const loadUserSwaps = async () => {
     try {
-      const swaps = await getSwapsByUser(user!._id)
-      setActiveSwaps(swaps.filter((swap) => swap.status !== "completed"))
+      const response = await fetch(`/api/swaps?userId=${user!._id}`)
+      if (response.ok) {
+        const swaps = await response.json()
+        setActiveSwaps(swaps.filter((swap: Swap) => swap.status !== "completed"))
+      }
     } catch (error) {
       console.error("Error loading user swaps:", error)
     } finally {
       setLoadingSwaps(false)
+    }
+  }
+
+  const handleSignOut = async () => {
+    try {
+      const response = await fetch("/api/auth/signout", { method: "POST" })
+      if (response.ok) {
+        window.location.href = "/"
+      }
+    } catch (error) {
+      console.error("Error signing out:", error)
     }
   }
 
@@ -103,11 +148,9 @@ export default function DashboardPage() {
             <Button variant="ghost" size="sm">
               <Settings className="h-4 w-4" />
             </Button>
-            <form action={signOutAction}>
-              <Button variant="ghost" size="sm" type="submit">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </form>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 interface AnimatedCounterProps {
   end: number
@@ -11,37 +11,63 @@ interface AnimatedCounterProps {
 
 export function AnimatedCounter({ end, duration = 2000, suffix = "", className = "" }: AnimatedCounterProps) {
   const [count, setCount] = useState(0)
+  const [hasAnimated, setHasAnimated] = useState(false)
+  const counterRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
-    let startTime: number
-    let animationFrame: number
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasAnimated) {
+            setHasAnimated(true)
+            
+            let startTime: number
+            let animationFrame: number
 
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime
-      const progress = Math.min((currentTime - startTime) / duration, 1)
-      
-      // Easing function for smooth animation
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
-      const currentCount = Math.floor(easeOutQuart * end)
-      
-      setCount(currentCount)
+            const animate = (currentTime: number) => {
+              if (!startTime) startTime = currentTime
+              const progress = Math.min((currentTime - startTime) / duration, 1)
+              
+              // Easing function for smooth animation
+              const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+              const currentCount = Math.floor(easeOutQuart * end)
+              
+              setCount(currentCount)
 
-      if (progress < 1) {
-        animationFrame = requestAnimationFrame(animate)
+              if (progress < 1) {
+                animationFrame = requestAnimationFrame(animate)
+              }
+            }
+
+            animationFrame = requestAnimationFrame(animate)
+
+            return () => {
+              if (animationFrame) {
+                cancelAnimationFrame(animationFrame)
+              }
+            }
+          }
+        })
+      },
+      {
+        threshold: 0.5, // Trigger when 50% of the element is visible
+        rootMargin: "0px 0px -50px 0px" // Start animation slightly before the element is fully visible
       }
-    }
+    )
 
-    animationFrame = requestAnimationFrame(animate)
+    if (counterRef.current) {
+      observer.observe(counterRef.current)
+    }
 
     return () => {
-      if (animationFrame) {
-        cancelAnimationFrame(animationFrame)
+      if (counterRef.current) {
+        observer.unobserve(counterRef.current)
       }
     }
-  }, [end, duration])
+  }, [end, duration, hasAnimated])
 
   return (
-    <span className={`animate-count ${className}`}>
+    <span ref={counterRef} className={`animate-count ${className}`}>
       {count.toLocaleString()}{suffix}
     </span>
   )

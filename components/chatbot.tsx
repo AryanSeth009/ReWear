@@ -59,6 +59,7 @@ export function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [isWaving, setIsWaving] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { user } = useAuth()
 
@@ -69,6 +70,16 @@ export function Chatbot() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Waving doodle effect every 10 seconds
+  useEffect(() => {
+    const waveInterval = setInterval(() => {
+      setIsWaving(true)
+      setTimeout(() => setIsWaving(false), 2000) // Wave for 2 seconds
+    }, 10000) // Every 10 seconds
+
+    return () => clearInterval(waveInterval)
+  }, [])
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
@@ -163,18 +174,20 @@ export function Chatbot() {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-green-600 hover:bg-green-700 shadow-lg z-50"
+        className={`fixed bottom-6 right-6 h-14 w-14 rounded-full bg-green-600 hover:bg-green-700 shadow-lg z-50 transition-all duration-300 ${
+          isWaving ? "animate-bounce scale-110" : ""
+        }`}
         size="icon"
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className={`h-6 w-6 transition-transform duration-300 ${isWaving ? "animate-pulse" : ""}`} />
         <span className="sr-only">Open chat</span>
       </Button>
     )
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-96 h-[500px] shadow-xl z-50 flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 bg-green-600 text-white rounded-t-lg">
+    <Card className="fixed bottom-6 right-6 w-96 h-[500px] shadow-xl z-50 flex flex-col bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-white/20 dark:border-gray-700/50">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
             <Bot className="h-4 w-4" />
@@ -201,17 +214,23 @@ export function Chatbot() {
               <div key={message.id} className="space-y-2">
                 <div className={`flex gap-2 ${message.isBot ? "justify-start" : "justify-end"}`}>
                   {message.isBot && (
-                    <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-1">
-                      <Bot className="h-3 w-3 text-green-600" />
+                    <div className="h-6 w-6 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0 mt-1">
+                      <Bot className="h-3 w-3 text-green-600 dark:text-green-400" />
                     </div>
                   )}
                   <div
                     className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                      message.isBot ? "bg-gray-100 text-gray-900" : "bg-green-600 text-white"
+                      message.isBot 
+                        ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100" 
+                        : "bg-green-600 text-white"
                     }`}
                   >
                     <div className="whitespace-pre-wrap">{message.text}</div>
-                    <div className={`text-xs mt-1 ${message.isBot ? "text-gray-500" : "text-green-100"}`}>
+                    <div className={`text-xs mt-1 ${
+                      message.isBot 
+                        ? "text-gray-500 dark:text-gray-400" 
+                        : "text-green-100"
+                    }`}>
                       {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
@@ -228,7 +247,7 @@ export function Chatbot() {
                       <Badge
                         key={index}
                         variant="outline"
-                        className="cursor-pointer hover:bg-green-50 text-xs"
+                        className="cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 text-xs border-green-200 dark:border-green-700"
                         onClick={() => handleSendMessage(suggestion)}
                       >
                         {suggestion}
@@ -241,18 +260,18 @@ export function Chatbot() {
 
             {isTyping && (
               <div className="flex gap-2 justify-start">
-                <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-1">
-                  <Bot className="h-3 w-3 text-green-600" />
+                <div className="h-6 w-6 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0 mt-1">
+                  <Bot className="h-3 w-3 text-green-600 dark:text-green-400" />
                 </div>
-                <div className="bg-gray-100 rounded-lg px-3 py-2 text-sm">
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-2 text-sm">
                   <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" />
                     <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
                       style={{ animationDelay: "0.1s" }}
                     />
                     <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
                       style={{ animationDelay: "0.2s" }}
                     />
                   </div>
@@ -265,14 +284,14 @@ export function Chatbot() {
 
         {/* Quick Actions */}
         {messages.length <= 1 && (
-          <div className="p-3 border-t bg-gray-50">
-            <p className="text-xs text-gray-600 mb-2">Quick questions:</p>
+          <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Quick questions:</p>
             <div className="flex flex-wrap gap-1">
               {QUICK_ACTIONS.slice(0, 3).map((action, index) => (
                 <Badge
                   key={index}
                   variant="outline"
-                  className="cursor-pointer hover:bg-green-50 text-xs"
+                  className="cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 text-xs border-green-200 dark:border-green-700"
                   onClick={() => handleSendMessage(action)}
                 >
                   {action}
@@ -283,14 +302,14 @@ export function Chatbot() {
         )}
 
         {/* Input */}
-        <div className="p-3 border-t">
+        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
           <div className="flex gap-2">
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Ask me anything about ReWear..."
-              className="flex-1"
+              className="flex-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600"
               disabled={isTyping}
             />
             <Button

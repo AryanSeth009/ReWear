@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,37 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Upload, X, Plus, CheckCircle, Recycle } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
+import { ThemeToggle } from "@/components/theme-provider";
 
 const AddItem = () => {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors duration-300">
+        <div className="text-center">
+          <Recycle className="h-12 w-12 text-green-600 dark:text-green-400 mx-auto mb-4 animate-spin" />
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -27,7 +56,6 @@ const AddItem = () => {
   const [tagList, setTagList] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const router = useRouter();
 
   const categories = [
     'Tops', 'Bottoms', 'Dresses', 'Jackets', 'Shoes', 'Accessories', 'Activewear', 'Formal'
@@ -137,6 +165,7 @@ const AddItem = () => {
             </Link>
           </nav>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" asChild>
               <Link href="/login">Login</Link>
             </Button>
